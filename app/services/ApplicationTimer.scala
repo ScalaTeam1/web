@@ -1,9 +1,16 @@
 package services
 
+import com.neu.edu.FlightPricePrediction.configure.Constants.{CONFIG_LOCATION, INPUT_DATA_PATH, MODEL_ID, MODEL_PATH, PERSISTENCE_CONFIG_PREFIX, PREDICTOR_CONFIG_PREFIX, PREPROCESSOR_PATH}
+import com.neu.edu.FlightPricePrediction.predictor.FightPricePredictor
+import com.neu.edu.FlightPricePrediction.predictor.FightPricePredictor.{config, loadModel, loadPreprocessModel, modelId}
+import com.neu.edu.FlightPricePrediction.trainer.FlightPriceTrainer
+import com.typesafe.config.ConfigFactory
+
 import java.time.{Clock, Instant}
 import javax.inject._
 import play.api.Logger
 import play.api.inject.ApplicationLifecycle
+
 import scala.concurrent.Future
 
 /**
@@ -28,7 +35,6 @@ class ApplicationTimer @Inject() (clock: Clock, appLifecycle: ApplicationLifecyc
   // This code is called when the application starts.
   private val start: Instant = clock.instant
   logger.info(s"ApplicationTimer demo: Starting application at $start.")
-
   // When the application starts, register a stop hook with the
   // ApplicationLifecycle object. The code inside the stop hook will
   // be run when the application stops.
