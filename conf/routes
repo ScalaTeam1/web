@@ -14,4 +14,4 @@ GET         /assets/*file        controllers.Assets.versioned(path="/public", fi
 
 + nocsrf
 POST        /upload              controllers.PredictController.upload
-
+GET        /test       controllers.PredictController.test

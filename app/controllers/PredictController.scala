@@ -4,6 +4,7 @@ import akka.stream.IOResult
 import akka.stream.scaladsl._
 import akka.util.ByteString
 import com.google.inject.Singleton
+import com.neu.edu.FlightPricePrediction.pojo.FlightReader
 import play.api._
 import play.api.data.Form
 import play.api.data.Forms._
@@ -11,6 +12,7 @@ import play.api.libs.streams._
 import play.api.mvc.MultipartFormData.FilePart
 import play.api.mvc._
 import play.core.parsers.Multipart.FileInfo
+import services.PredictorService
 import utils.FileUtil
 
 import java.io.File
@@ -21,12 +23,11 @@ import scala.concurrent.{ExecutionContext, Future}
 case class FormData(name: String, modelPath: String)
 
 @Singleton
-class PredictController @Inject()(config: Configuration, cc: MessagesControllerComponents)
+class PredictController @Inject()(config: Configuration, cc: MessagesControllerComponents, ps: PredictorService)
                                  (implicit executionContext: ExecutionContext)
   extends MessagesAbstractController(cc) {
 
   private val logger = Logger(this.getClass)
-
   def index: mvc.Action[AnyContent] = Action { implicit request =>
     Ok(views.html.index(form))
   }
@@ -79,6 +80,11 @@ class PredictController @Inject()(config: Configuration, cc: MessagesControllerC
     }
 
     Ok(s"file size = ${fileOption.getOrElse("no file")}")
+  }
+
+  def test: mvc.Action[AnyContent] = Action {
+    val r = ps.predict(FlightReader("./dataset/input.csv").dy)
+    Ok("OK")
   }
 
 }
