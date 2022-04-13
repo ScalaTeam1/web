@@ -5,7 +5,7 @@ import akka.stream.scaladsl.{FileIO, Sink}
 import akka.util.ByteString
 import com.google.inject.Singleton
 import com.neu.edu.FlightPricePrediction.pojo.FlightReader
-import play.api._
+import controllers.flight.FormData
 import play.api.data.Form
 import play.api.data.Forms.{mapping, text}
 import play.api.libs.streams.Accumulator
@@ -87,24 +87,24 @@ class PredictController @Inject()(predictor: PredictorService, cc: MessagesContr
   }
 
 
-  def predict: mvc.Action[MultipartFormData[File]] = Action(parse.multipartFormData(handleFilePartAsFile)) { implicit request =>
-    val fileOption = request.body.file("name").map {
-      case FilePart(key, filename, contentType, file, fileSize, dispositionType) =>
-        logger.info(s"key = $key, filename = $filename, contentType = $contentType, file = $file, fileSize = $fileSize, dispositionType = $dispositionType")
-        val data = download(file, filename)
-        data
-    }
-    if (fileOption.get.exists()) {
-      BadRequest("No file found")
-    }
-    val triedFrame = predictor.predict(fileOption.get.getAbsolutePath)
-    val result = triedFrame.get
-    result.show(true)
-    Ok(result.collect().mkString("\n"))
-  }
+//  def predict: mvc.Action[MultipartFormData[File]] = Action(parse.multipartFormData(handleFilePartAsFile)) { implicit request =>
+//    val fileOption = request.body.file("name").map {
+//      case FilePart(key, filename, contentType, file, fileSize, dispositionType) =>
+//        logger.info(s"key = $key, filename = $filename, contentType = $contentType, file = $file, fileSize = $fileSize, dispositionType = $dispositionType")
+//        val data = download(file, filename)
+//        data
+//    }
+//    if (fileOption.get.exists()) {
+//      BadRequest("No file found")
+//    }
+//    val triedFrame = predictor.predict(fileOption.get.getAbsolutePath)
+//    val result = triedFrame.get
+//    result.show(true)
+//    Ok(result.collect().mkString("\n"))
+//  }
 
-  def test: mvc.Action[AnyContent] = Action {
-    val r = ps.predict(FlightReader("./dataset/input.csv").dy)
+  def predict: mvc.Action[AnyContent] = Action {
+    val r = predictor.predict(FlightReader("./dataset/input.csv").dy)
     Ok("OK")
   }
 

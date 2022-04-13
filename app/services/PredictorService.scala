@@ -1,9 +1,8 @@
 package services
 
-<<<<<<< HEAD
-import com.neu.edu.FlightPricePrediction.pojo.Flight
+import com.neu.edu.FlightPricePrediction.pojo.{Flight, FlightReader}
 import com.neu.edu.FlightPricePrediction.predictor.{FightPricePredictor, Predictor}
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.{SparkConf, SparkContext, sql}
 import org.apache.spark.sql.Dataset
 import play.api.{Configuration, Logger}
 import play.api.inject.ApplicationLifecycle
