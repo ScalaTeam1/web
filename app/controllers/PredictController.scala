@@ -1,27 +1,27 @@
 package controllers
 
 import akka.stream.IOResult
-import akka.stream.scaladsl._
+import akka.stream.scaladsl.{FileIO, Sink}
 import akka.util.ByteString
 import com.google.inject.Singleton
-import play.api._
+import controllers.flight.FormData
 import play.api.data.Form
-import play.api.data.Forms._
-import play.api.libs.streams._
+import play.api.data.Forms.{mapping, text}
+import play.api.libs.streams.Accumulator
 import play.api.mvc.MultipartFormData.FilePart
-import play.api.mvc._
+import play.api.mvc.{AnyContent, MessagesAbstractController, MessagesControllerComponents, MultipartFormData}
+import play.api.{Logger, mvc}
 import play.core.parsers.Multipart.FileInfo
+import services.PredictorService
 import utils.FileUtil
 
 import java.io.File
 import java.nio.file.{Files, Path}
-import javax.inject._
+import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-case class FormData(name: String, modelPath: String)
-
 @Singleton
-class PredictController @Inject()(config: Configuration, cc: MessagesControllerComponents)
+class PredictController @Inject()(predictor: PredictorService, cc: MessagesControllerComponents)
                                  (implicit executionContext: ExecutionContext)
   extends MessagesAbstractController(cc) {
 
@@ -55,13 +55,7 @@ class PredictController @Inject()(config: Configuration, cc: MessagesControllerC
   private def operateOnTempFile(file: File, filename: String) = {
     val size = Files.size(file.toPath)
     logger.info(s"size = ${size}")
-    val dest = FileUtil.generateFilePath("upload") + filename
-    logger.info(s"${dest}")
-    val newFile = new File(dest)
-    if (newFile.exists()) {
-      newFile.delete()
-    }
-    Files.move(file.toPath, newFile.toPath)
+    download(file, filename)
     size
   }
 
@@ -79,6 +73,34 @@ class PredictController @Inject()(config: Configuration, cc: MessagesControllerC
     }
 
     Ok(s"file size = ${fileOption.getOrElse("no file")}")
+  }
+
+  private def download(file: File, filename: String): File = {
+    val dest = FileUtil.generateFilePath("upload") + filename
+    logger.info(s"${dest}")
+    val newFile = new File(dest)
+    if (newFile.exists()) {
+      newFile.delete()
+    }
+    Files.move(file.toPath, newFile.toPath)
+    newFile
+  }
+
+
+  def predict: mvc.Action[MultipartFormData[File]] = Action(parse.multipartFormData(handleFilePartAsFile)) { implicit request =>
+    val fileOption = request.body.file("name").map {
+      case FilePart(key, filename, contentType, file, fileSize, dispositionType) =>
+        logger.info(s"key = $key, filename = $filename, contentType = $contentType, file = $file, fileSize = $fileSize, dispositionType = $dispositionType")
+        val data = download(file, filename)
+        data
+    }
+    if (fileOption.get.exists()) {
+      BadRequest("No file found")
+    }
+    val triedFrame = predictor.predict(fileOption.get.getAbsolutePath)
+    val result = triedFrame.get
+    result.show(true)
+    Ok(result.collect().mkString("\n"))
   }
 
 }
