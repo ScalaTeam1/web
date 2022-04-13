@@ -1,5 +1,6 @@
 package services
 
+<<<<<<< HEAD
 import com.neu.edu.FlightPricePrediction.pojo.Flight
 import com.neu.edu.FlightPricePrediction.predictor.{FightPricePredictor, Predictor}
 import org.apache.spark.{SparkConf, SparkContext}

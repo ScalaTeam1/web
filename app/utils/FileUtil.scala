@@ -25,6 +25,10 @@ object FileUtil {
 
   def generateZipFilePath(bucket: String, id: String) = s"${generateFilePath(bucket)}$id.zip"
 
+  def getModelPath(bucket: String, id: String) = s"${generateUnzipFilePath(bucket, id)}${separator}best_model${separator}"
+
+  def getPreprocessModelPath(bucket: String, id: String) = s"${generateUnzipFilePath(bucket, id)}${separator}preprocess_model${separator}"
+
   def generateUnzipFilePath(bucket: String, id: String) = s"${generateFilePath(bucket)}unzip$separator$id"
 
   def downloadIfNotExist(bucket: String, id: String): Unit = {

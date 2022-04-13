@@ -1,9 +1,10 @@
-@(form: Form[controllers.FormData])(implicit request: MessagesRequestHeader)
+@import controllers.flight.FormData
+@(form: Form[FormData])(implicit request: MessagesRequestHeader)
 
-    @main("Welcome to Play") {
-        @helper.form(action = routes.PredictController.upload, Symbol("enctype") -> "multipart/form-data") {
-            @helper.inputFile(form("name"))
-            @helper.CSRF.formField
-            <input type="submit" id="upload" value="upload file"/>
-        }
+@main("Welcome to Play") {
+    @helper.form(action = routes.PredictController.predict, Symbol("enctype") -> "multipart/form-data") {
+        @helper.inputFile(form("name"))
+        @helper.CSRF.formField
+        <input type="submit" id="upload" value="upload file"/>
     }
+}
