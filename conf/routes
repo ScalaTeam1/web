@@ -18,4 +18,5 @@ GET         /web                 controllers.PredictController.index
 POST        /upload              controllers.PredictController.predict
 + nocsrf
 POST        /predict             controllers.PredictController.predict
+POST        /predict/single             controllers.PredictController.predictSingleFlight
 

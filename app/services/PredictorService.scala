@@ -1,7 +1,7 @@
 package services
 
 import com.google.inject.{Inject, Singleton}
-import com.neu.edu.FlightPricePrediction.pojo.FlightReader
+import com.neu.edu.FlightPricePrediction.pojo.{Flight, FlightReader, IterableFlightReader}
 import org.apache.spark.sql
 import play.api.Configuration
 import utils.FileUtil._
@@ -26,6 +26,13 @@ class PredictorService @Inject()(config: Configuration) {
     val input = FlightReader(flightDataPath)
     val predictor = new FlightPricePredictor(modelId, modelPath, preprocessorPath)
     val output = predictor.predict(input.dy)
+    output
+  }
+
+  def predict(flight: Flight): Try[sql.DataFrame] = {
+    val input = IterableFlightReader(Seq(flight))
+    val predictor = new FlightPricePredictor(modelId, modelPath, preprocessorPath)
+    val output = predictor.predict(Try.apply(input.dy))
     output
   }
 

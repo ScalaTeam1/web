@@ -20,8 +20,3 @@ config file │ └── routes API Routes ├── project │ ├── buil
 - streaming
 - mongodb curd
 
-1. 应用启动 读取配置文件中的model路径 model不存在则从s3中下载
-
-2. online predict 读取文件 or s3路径 下载 提交预测 更新至mongodb中
-
-3. streaming 读取文件 or s3路径 下载 提交预测 更新至mongodb中
