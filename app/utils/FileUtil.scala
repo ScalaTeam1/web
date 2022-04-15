@@ -4,6 +4,7 @@ import com.neu.edu.FlightPricePrediction.db.MinioOps
 import org.zeroturnaround.zip.ZipUtil
 
 import java.io.File
+import java.nio.file.Files
 
 object FileUtil {
 
@@ -47,5 +48,16 @@ object FileUtil {
 
     ZipUtil.unpack(new File(saveDirPath + s"$id.zip"), new File(unzipPath))
   }
+
+  def download(file: File, filename: String): File = {
+    val dest = FileUtil.generateFilePath("upload") + filename
+    val newFile = new File(dest)
+    if (newFile.exists()) {
+      newFile.delete()
+    }
+    Files.move(file.toPath, newFile.toPath)
+    newFile
+  }
+
 
 }
