@@ -25,5 +25,6 @@ libraryDependencies ++= Seq(
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4"
 libraryDependencies += "io.minio" % "minio" % "6.0.13"
 libraryDependencies += "commons-io" % "commons-io" % "2.5"
-// https://mvnrepository.com/artifact/com.phasmidsoftware/tableparser
 libraryDependencies += "com.phasmidsoftware" %% "tableparser" % "1.0.14"
+
+unmanagedBase := baseDirectory.value / "lib"

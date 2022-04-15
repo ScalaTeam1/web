@@ -36,16 +36,14 @@ class PredictorService @Inject()(config: Configuration) {
     output
   }
 
-  def streaming() = ???
+  private val model = FightPricePredictor.loadModel("./tmp/e86f1ef3-c24a-40bd-8220-bebf81ff85b1/best_model")
+  private val preprocesspr = FightPricePredictor.loadPreprocessModel("./tmp/e86f1ef3-c24a-40bd-8220-bebf81ff85b1/preprocess_model")
 
-  def checkModel(): Unit = {
+  private val predictor: Predictor[Flight] =  new FightPricePredictor("123", model, preprocesspr)
+  val brPredictor = sc.broadcast(predictor)
 
-    downloadIfNotExist("test", modelId)
-    val modelPath = getModelPath("test", modelId)
-    print(modelPath)
-    //    val modelPath = getModelPath("test", modelId)
-    //    predictor = FightPricePredictor(modelId, loadModel(modelPath), loadPreprocessModel(preprocessorPath))
-
+  def predict(data: Try[Dataset[Flight]]) = {
+    brPredictor.value.predict(data)
   }
 
 }
