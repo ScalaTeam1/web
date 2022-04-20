@@ -7,7 +7,6 @@ import com.google.gson.Gson
 import com.google.inject.Singleton
 import com.neu.edu.FlightPricePrediction.pojo.Flight
 import controllers.flight.FormData
-import org.apache.spark.sql.DataFrame
 import play.api.data.Form
 import play.api.data.Forms.{mapping, text}
 import play.api.libs.streams.Accumulator
@@ -35,10 +34,7 @@ class PredictController @Inject()(predictor: PredictorService, cc: MessagesContr
   }
 
   val form: Form[FormData] = Form(
-    mapping(
-      "name" -> text,
-      "modelPath" -> text
-    )(FormData.apply)(FormData.unapply)
+    mapping("name" -> text)(FormData.apply)(FormData.unapply)
   )
 
   type FilePartHandler[A] = FileInfo => Accumulator[ByteString, FilePart[A]]
@@ -55,7 +51,6 @@ class PredictController @Inject()(predictor: PredictorService, cc: MessagesContr
       }
   }
 
-
   def predictSingleFlight: Action[AnyContent] = Action { request: Request[AnyContent] =>
     val json = request.body.asJson
     json match {
@@ -63,32 +58,41 @@ class PredictController @Inject()(predictor: PredictorService, cc: MessagesContr
         val gson = new Gson
         val flight = gson.fromJson(x.toString(), classOf[Flight])
         val df = predictor.predict(flight)
-        Ok(mapToJson(df))
+        Ok(predictor.dfToJson(df))
       case None => BadRequest("Empty")
     }
   }
 
-  private def mapToJson(value: DataFrame) = {
-    val rows = value.select("id", "airline", "flight", "sourceCity", "departureTime", "stops", "arrivalTime", "destinationCity", "classType", "duration", "daysLeft", "prediction").collect()
-    val flights = rows.map(row => {
-      new Flight(row.getAs(0), row.getAs(1), row.getAs(2), row.getAs(3), row.getAs(4), row.getAs(5), row.getAs(6), row.getAs(7), row.getAs(8), row.getAs(9), row.getAs(10), row.getAs[Double](11).toInt)
-    })
-    val gson = new Gson
-    gson.toJson(flights)
-  }
 
   def predict: mvc.Action[MultipartFormData[File]] = Action(parse.multipartFormData(handleFilePartAsFile)) { implicit request =>
-    val fileOption = request.body.file("name").map {
+    val fileOption = getFileBody(request)
+    fileOption match {
+      case Some(value) =>
+        val df = predictor.predict(value.getAbsolutePath)
+        Ok(predictor.dfToJson(df))
+      case None => BadRequest("No file found")
+    }
+  }
+
+
+  def streaming: mvc.Action[MultipartFormData[File]] = Action(parse.multipartFormData(handleFilePartAsFile)) { implicit request =>
+    val fileOption = getFileBody(request)
+    fileOption match {
+      case Some(value) =>
+        val uuid = predictor.streaming(value.getAbsolutePath)
+        val gson = new Gson
+        Ok(gson.toJson(uuid))
+      case None => BadRequest("No file found")
+    }
+  }
+
+  private def getFileBody(request: MessagesRequest[MultipartFormData[File]]) = {
+    request.body.file("name").map {
       case FilePart(key, filename, contentType, file, fileSize, dispositionType) =>
         logger.info(s"key = $key, filename = $filename, contentType = $contentType, file = $file, fileSize = $fileSize, dispositionType = $dispositionType")
         val data = FileUtil.download(file, filename)
         data
-    }
-    fileOption match {
-      case Some(value) =>
-        val df = predictor.predict(value.getAbsolutePath)
-        Ok(mapToJson(df))
-      case None => BadRequest("No file found")
+      case _ => throw new RuntimeException("")
     }
   }
 

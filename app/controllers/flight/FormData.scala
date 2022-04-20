@@ -1,3 +1,3 @@
 package controllers.flight
 
-case class FormData(name: String, modelPath: String)
+case class FormData(name: String)
