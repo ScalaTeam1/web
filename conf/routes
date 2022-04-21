@@ -4,12 +4,13 @@
 # ~~~~
 
 # An example controller showing a sample home page
-GET         /                    controllers.HomeController.index
+GET         /                    controllers.HomeController.hello
 
 # An example controller showing how to write asynchronous code
-GET         /message             controllers.AsyncController.message
 GET         /task/:id             controllers.AsyncController.get(id:String)
-POST /async/predict controllers.AsyncController.message
+GET         /task/download/:id    controllers.AsyncController.download(id:String)
++ nocsrf
+POST        /async/predict        controllers.AsyncController.predict
 
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file        controllers.Assets.versioned(path="/public", file: Asset)

@@ -3,7 +3,6 @@ package services
 import actors.PredictActor.ProcessStep
 import akka.actor.{ActorRef, ActorSystem}
 import cn.playscala.mongo.Mongo
-import com.fasterxml.jackson.annotation.ObjectIdGenerators.UUIDGenerator
 import com.google.gson.Gson
 import com.google.inject.{Inject, Singleton}
 import com.neu.edu.FlightPricePrediction.db.MinioOps
@@ -14,12 +13,13 @@ import models.Task
 import org.apache.spark.sql
 import org.apache.spark.sql.SparkSession
 import org.zeroturnaround.zip.ZipUtil
-import play.api.Configuration
 import play.api.libs.json.Json.obj
+import play.api.{Configuration, Logger}
 import utils.FileUtil
 import utils.FileUtil._
 
 import java.io.File
+import java.util.UUID
 import javax.inject.Named
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
@@ -28,7 +28,7 @@ import scala.util.{Failure, Success, Try}
 @Singleton
 class PredictorService @Inject()(mongo: Mongo, @Named("configured-actor") myActor: ActorRef, actorSystem: ActorSystem, holder: ContextHolder, config: Configuration) {
 
-  private val logger = org.slf4j.LoggerFactory.getLogger(this.getClass)
+  private val logger = Logger(this.getClass)
 
   private val modelId = config.get[String]("predictor.model_id")
   private val preprocessorPath = getPreprocessModelPath("test", modelId)
@@ -52,9 +52,6 @@ class PredictorService @Inject()(mongo: Mongo, @Named("configured-actor") myActo
     }
     mongo.insertOne[Task](task)
     val frame = predict(dataPath)
-    frame.map(row => {
-
-    })
     val output = flightsToCsv(uuid, frame)
     mongo.updateById[Task](uuid, obj("$set" -> obj("state" -> 1)))
     actorSystem.scheduler.scheduleOnce(0.milliseconds, myActor, ProcessStep(uuid, output))
@@ -115,9 +112,7 @@ class PredictorService @Inject()(mongo: Mongo, @Named("configured-actor") myActo
     dstream.saveAsTextFiles(output)
 
     //    val df = predict(output)
-    val generator = new UUIDGenerator
-    val uuid = generator.generateId().toString
-
+    val uuid = UUID.randomUUID().toString
     uuid
   }
 

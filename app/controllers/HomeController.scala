@@ -1,7 +1,6 @@
 package controllers
 
 import akka.actor.ActorSystem
-import com.fasterxml.jackson.annotation.ObjectIdGenerators.UUIDGenerator
 import play.api.Configuration
 import play.api.mvc._
 
@@ -27,9 +26,7 @@ class HomeController @Inject()(system: ActorSystem, config: Configuration, cc: C
   }
 
   def hello = Action {
-    val uuid = new UUIDGenerator()
-    Ok(uuid.generateId().toString)
-
+    Ok(System.getProperty("user.dir"))
   }
 
 }

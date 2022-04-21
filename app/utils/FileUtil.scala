@@ -7,8 +7,9 @@ import java.io.File
 import java.nio.file.Files
 
 object FileUtil {
+  // todo
 
-  private val rootPath = "/Users/arronshentu/Downloads/web"
+  private val rootPath = System.getProperty("user.dir")
 
   private val separator: String = java.io.File.separator
 
