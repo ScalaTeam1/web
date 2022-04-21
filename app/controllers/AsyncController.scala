@@ -1,39 +1,49 @@
 package controllers
 
-import actors.PredictActor.predict
-import akka.actor.{ActorRef, ActorSystem}
+import akka.actor.ActorSystem
+import cn.playscala.mongo.Mongo
 import com.fasterxml.jackson.annotation.ObjectIdGenerators.UUIDGenerator
+import com.google.gson.Gson
+import models.Task
+import play.api.libs.Files
 import play.api.mvc._
+import services.PredictorService
+import utils.FileUtil
 
+import java.nio.file.Paths
 import javax.inject._
-import scala.concurrent.ExecutionContext
-import scala.concurrent.duration._
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, ExecutionContext}
 
-/**
- * This controller creates an `Action` that demonstrates how to write
- * simple asynchronous code in a controller. It uses a timer to
- * asynchronously delay sending a response for 1 second.
- *
- * @param cc          standard controller components
- * @param actorSystem We need the `ActorSystem`'s `Scheduler` to
- *                    run code after a delay.
- * @param exec        We need an `ExecutionContext` to execute our
- *                    asynchronous code.  When rendering content, you should use Play's
- *                    default execution context, which is dependency injected.  If you are
- *                    using blocking operations, such as database or network access, then you should
- *                    use a different custom execution context that has a thread pool configured for
- *                    a blocking API.
- */
 @Singleton
-class AsyncController @Inject()(@Named("configured-actor") myActor: ActorRef, cc: ControllerComponents, actorSystem: ActorSystem)(implicit exec: ExecutionContext) extends AbstractController(cc) {
+class AsyncController @Inject()(mongo: Mongo, service: PredictorService,
+                                cc: ControllerComponents, actorSystem: ActorSystem)(implicit exec: ExecutionContext) extends AbstractController(cc) {
 
   private val logger = org.slf4j.LoggerFactory.getLogger(this.getClass)
 
-  def message: Action[AnyContent] = Action {
+  def upload = Action(parse.temporaryFile) { request =>
+    request.body.moveTo(Paths.get("/tmp/picture/uploaded"), replace = true)
+    Ok("File uploaded")
+  }
+
+  private val root = "/Users/arronshentu/Downloads/web/tmp/upload";
+
+  def message: Action[Files.TemporaryFile] = Action(parse.temporaryFile) { request =>
     val uuid = new UUIDGenerator()
     val string = uuid.generateId().toString
-    actorSystem.scheduler.scheduleOnce(0.milliseconds, myActor, predict(string, "filepath"))
+    val path = request.body.moveTo(Paths.get(s"${FileUtil.getUploadPath(string)}input.csv"), replace = true)
+    service.predict(string, path.toAbsolutePath.toString)
     Ok(string)
+  }
+
+  def get(id: String): Action[AnyContent] = Action {
+    val value = new Gson
+    val future = mongo.findById[Task](id)
+    Await.result(
+      future.map {
+        case Some(t) => Ok(value.toJson(t))
+      }, 2000.milliseconds)
+
   }
 
 }

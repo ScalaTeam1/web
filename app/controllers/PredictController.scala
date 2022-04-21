@@ -1,5 +1,6 @@
 package controllers
 
+import akka.Done
 import akka.stream.IOResult
 import akka.stream.scaladsl.{FileIO, Sink}
 import akka.util.ByteString
@@ -21,6 +22,7 @@ import java.io.File
 import java.nio.file.{Files, Path}
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Success
 
 @Singleton
 class PredictController @Inject()(predictor: PredictorService, cc: MessagesControllerComponents)
@@ -45,8 +47,8 @@ class PredictController @Inject()(predictor: PredictorService, cc: MessagesContr
       val fileSink: Sink[ByteString, Future[IOResult]] = FileIO.toPath(path)
       val accumulator: Accumulator[ByteString, IOResult] = Accumulator(fileSink)
       accumulator.map {
-        case IOResult(count, status) =>
-          logger.info(s"count = $count, status = $status")
+        case IOResult(count, Success(Done)) =>
+          logger.info(s"count = $count")
           FilePart(partName, filename, contentType, path.toFile)
       }
   }
@@ -63,7 +65,6 @@ class PredictController @Inject()(predictor: PredictorService, cc: MessagesContr
     }
   }
 
-
   def predict: mvc.Action[MultipartFormData[File]] = Action(parse.multipartFormData(handleFilePartAsFile)) { implicit request =>
     val fileOption = getFileBody(request)
     fileOption match {
@@ -73,7 +74,6 @@ class PredictController @Inject()(predictor: PredictorService, cc: MessagesContr
       case None => BadRequest("No file found")
     }
   }
-
 
   def streaming: mvc.Action[MultipartFormData[File]] = Action(parse.multipartFormData(handleFilePartAsFile)) { implicit request =>
     val fileOption = getFileBody(request)

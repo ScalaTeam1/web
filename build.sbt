@@ -17,10 +17,15 @@ libraryDependencies ++= Seq(
   "ml.dmlc" %% "xgboost4j-spark" % "1.5.2",
   "org.apache.spark" %% "spark-mllib" % "3.2.1",
   "org.apache.spark" %% "spark-sql" % "3.2.1",
-  "org.mongodb.scala" %% "mongo-scala-driver" % "4.5.1",
+  "org.mongodb" % "mongo-java-driver" % "3.12.10",
+  "dev.morphia.morphia" % "morphia-core" % "2.2.6",
   "com.typesafe" % "config" % "1.4.2",
   "org.zeroturnaround" % "zt-zip" % "1.15"
 )
+
+libraryDependencies += "org.mongodb.scala" %% "mongo-scala-driver" % "2.8.0"
+libraryDependencies += "cn.playscala" % "play-mongo_2.12" % "0.3.0"
+addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full)
 
 libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4"
 libraryDependencies += "io.minio" % "minio" % "6.0.13"

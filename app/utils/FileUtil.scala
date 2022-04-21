@@ -8,21 +8,34 @@ import java.nio.file.Files
 
 object FileUtil {
 
-  private val rootPath = "/Users/arronshentu/Downloads/web2"
+  private val rootPath = "/Users/arronshentu/Downloads/web"
 
   private val separator: String = java.io.File.separator
 
   // rootPath/tmp
   // rootPath/tmp/*.zip
   // rootPath/tmp/unzip/uuid/best_model/data/XGBoostRegressionModel
+  // rootPath/tmp/uuid/upload
+  // rootPath/tmp/uuid/output
 
-  def generateFilePath(bucket: String) = {
+  def generateFilePath(bucket: String): String = {
     val path = s"$rootPath${separator}tmp$separator$bucket$separator"
     if (!new File(path).exists()) {
       new File(path).mkdirs()
     }
     path
   }
+
+  def getUploadPath(uuid: String): String = {
+    val path = s"$rootPath${separator}tmp${separator}upload${separator}$uuid$separator"
+    if (!new File(path).exists()) {
+      new File(path).mkdirs()
+    }
+    path
+  }
+
+
+  def generateFileOutputPath(uuid: String): String = s"${getUploadPath(uuid)}output$separator"
 
   def generateZipFilePath(bucket: String, id: String) = s"${generateFilePath(bucket)}$id.zip"
 

@@ -1,6 +1,7 @@
 //import actors.HelloActor
 
 import actors.PredictActor
+import cn.playscala.mongo.Mongo
 import com.google.inject.AbstractModule
 //import config.ConfiguredActor
 import play.api.libs.concurrent.AkkaGuiceSupport
@@ -26,6 +27,7 @@ class Module extends AbstractModule with AkkaGuiceSupport {
     bind(classOf[Clock]).toInstance(Clock.systemDefaultZone)
     bind(classOf[ApplicationTimer]).asEagerSingleton()
     bindActor[PredictActor]("configured-actor")
+    Mongo.setModelsPackage("models")
   }
 
 }

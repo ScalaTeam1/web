@@ -1,19 +1,23 @@
 package actors
 
-import actors.PredictActor.predict
+import actors.PredictActor.{PredictStep, ProcessStep, UpdateStep}
 import akka.actor.Actor
 import com.google.inject.Inject
 import services.PredictorService
 
 object PredictActor {
-  case class predict(uuid: String, path: String)
+  case class PredictStep(uuid: String, path: String)
+
+  case class ProcessStep(uuid: String, path: String)
+
+  case class UpdateStep(uuid: String)
 }
 
 class PredictActor @Inject()(service: PredictorService) extends Actor {
   def receive: Receive = {
-    case predict(uuid, path) =>
-      service.print(s"$uuid: $path")
-      println(s"$uuid: $path")
+    case ProcessStep(uuid, path) => service.process(uuid, path)
+    case PredictStep(uuid, path) => service.predict(uuid, path)
+    case UpdateStep(uuid) => service.update(uuid)
     case _ => println("error")
   }
 
