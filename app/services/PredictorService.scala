@@ -11,7 +11,6 @@ import com.neu.edu.FlightPricePrediction.predictor.FightPricePredictor
 import config.ContextHolder
 import models.Task
 import org.apache.spark.sql
-import org.apache.spark.sql.SparkSession
 import org.zeroturnaround.zip.ZipUtil
 import play.api.libs.json.Json.obj
 import play.api.{Configuration, Logger}
@@ -19,7 +18,6 @@ import utils.FileUtil
 import utils.FileUtil._
 
 import java.io.File
-import java.util.UUID
 import javax.inject.Named
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
@@ -48,7 +46,7 @@ class PredictorService @Inject()(mongo: Mongo, @Named("configured-actor") myActo
     var task = new Task(uuid, 0, dataPath, "", 0L)
     reader.dy match {
       case Success(value) => task = task.copy(lines = value.count())
-      case Failure(exception) => throw new RuntimeException("todo")
+      case Failure(exception) => throw new RuntimeException(exception.getMessage)
     }
     mongo.insertOne[Task](task)
     val frame = predict(dataPath)
@@ -57,14 +55,15 @@ class PredictorService @Inject()(mongo: Mongo, @Named("configured-actor") myActo
     actorSystem.scheduler.scheduleOnce(0.milliseconds, myActor, ProcessStep(uuid, output))
   }
 
-  def update(uuid: String) = ???
-
   def process(uuid: String, dataPath: String): Unit = {
     val output = s"${FileUtil.getUploadPath(uuid)}output.zip"
     ZipUtil.pack(new File(dataPath), new File(output))
     MinioOps.putFile("test", s"${uuid}_output.zip", output) match {
-      case Failure(exception) => throw new RuntimeException(exception.getMessage)
-      case Success(value) => mongo.updateById[Task](uuid, obj("$set" -> obj("state" -> 2, "outputPath" -> output)))
+      case Failure(exception) =>
+        logger.error(s"[$uuid]: " + exception.getMessage)
+      case Success(_) =>
+        mongo.updateById[Task](uuid, obj("$set" -> obj("state" -> 2, "outputPath" -> output)))
+        logger.info(s"${uuid} job finished")
     }
   }
 
@@ -87,39 +86,17 @@ class PredictorService @Inject()(mongo: Mongo, @Named("configured-actor") myActo
     val output = brPredictor.value.predict(input)
     output match {
       case Success(value) => value
-      case Failure(exception) => {
+      case Failure(exception) =>
         logger.error(exception.getMessage)
         throw new RuntimeException(exception.getMessage)
-      }
     }
-  }
-
-  def streaming(flightDataPath: String): String = {
-    val spark = SparkSession.builder().getOrCreate()
-    val kafka = spark.readStream
-      .format("kafka")
-      .option("kafka.bootstrap.servers", "localhost:") // comma separated list of broker:host
-      .option("subscribe", "test") // comma separated list of topics
-      .option("startingOffsets", "latest") // read data from the end of the stream
-      .load()
-    import spark.implicits._
-    val df = kafka.as[Flight]
-    predict(Try.apply(df))
-
-
-    val dstream = holder.streamingContext.textFileStream(flightDataPath)
-    val output = ""
-    dstream.saveAsTextFiles(output)
-
-    //    val df = predict(output)
-    val uuid = UUID.randomUUID().toString
-    uuid
   }
 
   def flightsToCsv(uuid: String, flights: sql.DataFrame): String = {
     val output = FileUtil.generateFileOutputPath(uuid)
     val tmp = flights.select("id", "airline", "flight", "sourceCity", "departureTime", "stops", "arrivalTime", "destinationCity", "classType", "duration", "daysLeft", "prediction")
     tmp.write.format("csv").save(output)
+    logger.info(s"prediction finished $uuid")
     output
   }
 

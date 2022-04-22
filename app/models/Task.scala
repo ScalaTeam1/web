@@ -7,5 +7,9 @@ case class Task(_id: String, state: Int, inputPath: String, outputPath: String, 
 
 object Task {
 
+  val COMPLETE = 2;
+  val NEW = 0;
+  val PROCESSING = 1;
+
 }
 

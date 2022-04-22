@@ -25,6 +25,10 @@ class AsyncController @Inject()(mongo: Mongo,
 
   private val logger = Logger(this.getClass)
 
+  /** Submit a job and return an ID
+   *
+   * @return
+   */
   def predict: Action[Files.TemporaryFile] = Action(parse.temporaryFile) { request =>
     val string = UUID.randomUUID().toString
     val path = request.body.moveTo(Paths.get(s"${FileUtil.getUploadPath(string)}input.csv"), replace = true)
@@ -34,8 +38,13 @@ class AsyncController @Inject()(mongo: Mongo,
 
   val gson = new Gson
 
+  /**
+   * Check the task state
+   *
+   * @param id task id
+   * @return
+   */
   def get(id: String): Action[AnyContent] = Action {
-
     val future = mongo.findById[Task](id)
     Await.result(
       future.map {
@@ -45,20 +54,24 @@ class AsyncController @Inject()(mongo: Mongo,
       }, 2000.milliseconds)
   }
 
-  def download(id: String): Action[AnyContent] = Action {
-    val task = Await.result(
+  /**
+   * Download the task output
+   *
+   * @param id task id
+   * @return
+   */
+  def download(id: String): Any = Action {
+    Await.result(
       mongo.findById[Task](id).map {
-        case Some(t) => t
-        case _ => throw new RuntimeException("")
-      }
-      , 2000.milliseconds)
-    task.state match {
-      case 2 =>
-        val value = FileUtil.generateFileOutputPath(id)
-        MinioOps.getFile("test", s"${id}_output.zip", value, "output.zip")
-        Ok.sendFile(new java.io.File(s"${value}output.zip"))
-      case _ => BadRequest("not done")
-    }
+        case Some(t) =>
+          t.state match {
+            case Task.COMPLETE =>
+              val value = FileUtil.generateFileOutputPath(id)
+              MinioOps.getFile("test", s"${id}_output.zip", value, "output.zip")
+              Ok.sendFile(new java.io.File(s"${value}output.zip"))
+            case _ => BadRequest("Job is still processing")
+          }
+        case _ => BadRequest("Not found")
+      }, 2000.milliseconds)
   }
-
 }

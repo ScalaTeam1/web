@@ -7,17 +7,10 @@ import java.io.File
 import java.nio.file.Files
 
 object FileUtil {
-  // todo
 
   private val rootPath = System.getProperty("user.dir")
 
   private val separator: String = java.io.File.separator
-
-  // rootPath/tmp
-  // rootPath/tmp/*.zip
-  // rootPath/tmp/unzip/uuid/best_model/data/XGBoostRegressionModel
-  // rootPath/tmp/uuid/upload
-  // rootPath/tmp/uuid/output
 
   def generateFilePath(bucket: String): String = {
     val path = s"$rootPath${separator}tmp$separator$bucket$separator"

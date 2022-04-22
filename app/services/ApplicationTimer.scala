@@ -1,34 +1,14 @@
 package services
 
-import com.neu.edu.FlightPricePrediction.configure.Constants.{CONFIG_LOCATION, INPUT_DATA_PATH, MODEL_ID, MODEL_PATH, PERSISTENCE_CONFIG_PREFIX, PREDICTOR_CONFIG_PREFIX, PREPROCESSOR_PATH}
-import com.neu.edu.FlightPricePrediction.predictor.FightPricePredictor
-import com.neu.edu.FlightPricePrediction.predictor.FightPricePredictor.{config, loadModel, loadPreprocessModel, modelId}
-import com.neu.edu.FlightPricePrediction.trainer.FlightPriceTrainer
-import com.typesafe.config.ConfigFactory
-
-import java.time.{Clock, Instant}
-import javax.inject._
 import play.api.Logger
 import play.api.inject.ApplicationLifecycle
 
+import java.time.{Clock, Instant}
+import javax.inject._
 import scala.concurrent.Future
 
-/**
- * This class demonstrates how to run code when the
- * application starts and stops. It starts a timer when the
- * application starts. When the application stops it prints out how
- * long the application was running for.
- *
- * This class is registered for Guice dependency injection in the
- * [[Module]] class. We want the class to start when the application
- * starts, so it is registered as an "eager singleton". See the code
- * in the [[Module]] class to see how this happens.
- *
- * This class needs to run code when the server stops. It uses the
- * application's [[ApplicationLifecycle]] to register a stop hook.
- */
 @Singleton
-class ApplicationTimer @Inject() (clock: Clock, appLifecycle: ApplicationLifecycle) {
+class ApplicationTimer @Inject()(clock: Clock, appLifecycle: ApplicationLifecycle) {
 
   private val logger: Logger = Logger(this.getClass)
 

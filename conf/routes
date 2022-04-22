@@ -16,7 +16,6 @@ POST        /async/predict        controllers.AsyncController.predict
 GET         /assets/*file        controllers.Assets.versioned(path="/public", file: Asset)
 
 
-GET         /web                 controllers.PredictController.index
 + nocsrf
 POST        /predict             controllers.PredictController.predict
 POST        /predict/single             controllers.PredictController.predictSingleFlight
