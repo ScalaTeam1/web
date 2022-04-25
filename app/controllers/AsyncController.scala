@@ -61,7 +61,7 @@ class AsyncController @Inject()(mongo: Mongo,
    * @param id task id
    * @return
    */
-  def download(id: String): Any = Action {
+  def download(id: String): Action[AnyContent] = Action {
     Await.result(
       mongo.findById[Task](id).map {
         case Some(t) =>
