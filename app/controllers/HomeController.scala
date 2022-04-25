@@ -1,14 +1,18 @@
 package controllers
 
-import javax.inject._
+import akka.actor.ActorSystem
+import play.api.Configuration
 import play.api.mvc._
+
+import javax.inject._
 
 /**
  * This controller creates an `Action` to handle HTTP requests to the
  * application's home page.
  */
 @Singleton
-class HomeController @Inject()(cc: ControllerComponents) extends AbstractController(cc) {
+class HomeController @Inject()(system: ActorSystem, config: Configuration, cc: ControllerComponents) extends AbstractController(cc) {
+  //  val helloActor = system.actorOf(PredictActor.props, "hello-actor")
 
   /**
    * Create an Action to render an HTML page with a welcome message.
@@ -17,7 +21,12 @@ class HomeController @Inject()(cc: ControllerComponents) extends AbstractControl
    * a path of `/`.
    */
   def index = Action {
-    Ok(views.html.index("Your new application is ready."))
+    val modelId = config.get[String]("predictor.model_id")
+    Ok(modelId)
+  }
+
+  def hello = Action {
+    Ok(System.getProperty("user.dir"))
   }
 
 }

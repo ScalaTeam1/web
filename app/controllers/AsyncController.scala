@@ -1,49 +1,78 @@
 package controllers
 
-import javax.inject._
-
-import akka.actor.ActorSystem
+import actors.PredictActor.PredictStep
+import akka.actor.{ActorRef, ActorSystem}
+import cn.playscala.mongo.Mongo
+import com.google.gson.Gson
+import com.neu.edu.FlightPricePrediction.db.MinioOps
+import models.{Task, TaskVo}
+import play.api.Logger
+import play.api.libs.Files
 import play.api.mvc._
+import utils.FileUtil
 
-import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import java.nio.file.Paths
+import java.util.UUID
+import javax.inject._
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, ExecutionContext}
 
-/**
- * This controller creates an `Action` that demonstrates how to write
- * simple asynchronous code in a controller. It uses a timer to
- * asynchronously delay sending a response for 1 second.
- *
- * @param cc standard controller components
- * @param actorSystem We need the `ActorSystem`'s `Scheduler` to
- * run code after a delay.
- * @param exec We need an `ExecutionContext` to execute our
- * asynchronous code.  When rendering content, you should use Play's
- * default execution context, which is dependency injected.  If you are
- * using blocking operations, such as database or network access, then you should
- * use a different custom execution context that has a thread pool configured for
- * a blocking API.
- */
 @Singleton
-class AsyncController @Inject()(cc: ControllerComponents, actorSystem: ActorSystem)(implicit exec: ExecutionContext) extends AbstractController(cc) {
+class AsyncController @Inject()(mongo: Mongo,
+                                actorSystem: ActorSystem,
+                                @Named("configured-actor") myActor: ActorRef,
+                                cc: ControllerComponents)(implicit exec: ExecutionContext) extends AbstractController(cc) {
+
+  private val logger = Logger(this.getClass)
+
+  /** Submit a job and return an ID
+   *
+   * @return
+   */
+  def predict: Action[Files.TemporaryFile] = Action(parse.temporaryFile) { request =>
+    val string = UUID.randomUUID().toString
+    val path = request.body.moveTo(Paths.get(s"${FileUtil.getUploadPath(string)}input.csv"), replace = true)
+    actorSystem.scheduler.scheduleOnce(0.milliseconds, myActor, PredictStep(string, path.toAbsolutePath.toString))
+    Ok(string)
+  }
+
+  val gson = new Gson
 
   /**
-   * Creates an Action that returns a plain text message after a delay
-   * of 1 second.
+   * Check the task state
    *
-   * The configuration in the `routes` file means that this method
-   * will be called when the application receives a `GET` request with
-   * a path of `/message`.
+   * @param id task id
+   * @return
    */
-  def message = Action.async {
-    getFutureMessage(1.second).map { msg => Ok(msg) }
+  def get(id: String): Action[AnyContent] = Action {
+    val future = mongo.findById[Task](id)
+    Await.result(
+      future.map {
+        case Some(t) =>
+          val r = TaskVo(t._id, t.state, t.lines)
+          Ok(gson.toJson(r)).as("application/json")
+        case _ => BadRequest("Not found")
+      }, 2000.milliseconds)
   }
 
-  private def getFutureMessage(delayTime: FiniteDuration): Future[String] = {
-    val promise: Promise[String] = Promise[String]()
-    actorSystem.scheduler.scheduleOnce(delayTime) {
-      promise.success("Hi!")
-    }(actorSystem.dispatcher) // run scheduled tasks using the actor system's dispatcher
-    promise.future
+  /**
+   * Download the task output
+   *
+   * @param id task id
+   * @return
+   */
+  def download(id: String): Any = Action {
+    Await.result(
+      mongo.findById[Task](id).map {
+        case Some(t) =>
+          t.state match {
+            case Task.COMPLETE =>
+              val value = FileUtil.generateFileOutputPath(id)
+              MinioOps.getFile("test", s"${id}_output.zip", value, "output.zip")
+              Ok.sendFile(new java.io.File(s"${value}output.zip"))
+            case _ => BadRequest("Job is still processing")
+          }
+        case _ => BadRequest("Not found")
+      }, 2000.milliseconds)
   }
-
 }
