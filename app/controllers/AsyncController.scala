@@ -5,7 +5,7 @@ import akka.actor.{ActorRef, ActorSystem}
 import cn.playscala.mongo.Mongo
 import com.google.gson.Gson
 import com.neu.edu.FlightPricePrediction.db.MinioOps
-import models.{Task, TaskVo}
+import models.Task
 import play.api.Logger
 import play.api.libs.Files
 import play.api.mvc._
@@ -49,8 +49,7 @@ class AsyncController @Inject()(mongo: Mongo,
     Await.result(
       future.map {
         case Some(t) =>
-          val r = TaskVo(t._id, t.state, t.lines)
-          Ok(gson.toJson(r)).as("application/json")
+          Ok(gson.toJson(t)).as("application/json")
         case _ => BadRequest("Not found")
       }, 2000.milliseconds)
   }

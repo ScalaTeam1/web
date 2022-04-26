@@ -18,5 +18,6 @@ GET         /assets/*file        controllers.Assets.versioned(path="/public", fi
 
 + nocsrf
 POST        /predict             controllers.PredictController.predict
-POST        /predict/single             controllers.PredictController.predictSingleFlight
+POST        /predict/single      controllers.PredictController.predictSingleFlight
+GET         /websocket    controllers.WebSocketController.socket
 
