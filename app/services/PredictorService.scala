@@ -7,7 +7,6 @@ import com.google.gson.Gson
 import com.google.inject.{Inject, Singleton}
 import com.neu.edu.FlightPricePrediction.db.MinioOps
 import com.neu.edu.FlightPricePrediction.pojo.{Flight, FlightReader, IterableFlightReader}
-import com.neu.edu.FlightPricePrediction.predictor.FightPricePredictor
 import config.ContextHolder
 import models.Task
 import org.apache.spark.sql
@@ -15,7 +14,6 @@ import org.zeroturnaround.zip.ZipUtil
 import play.api.libs.json.Json.obj
 import play.api.{Configuration, Logger}
 import utils.FileUtil
-import utils.FileUtil._
 
 import java.io.File
 import javax.inject.Named
@@ -27,12 +25,6 @@ import scala.util.{Failure, Success, Try}
 class PredictorService @Inject()(mongo: Mongo, @Named("configured-actor") myActor: ActorRef, actorSystem: ActorSystem, holder: ContextHolder, config: Configuration) {
 
   private val logger = Logger(this.getClass)
-
-  private val modelId = config.get[String]("predictor.model_id")
-  private val preprocessorPath = getPreprocessModelPath("test", modelId)
-  private val modelPath = getModelPath("test", modelId)
-  private val predictor = new FightPricePredictor(modelId, FightPricePredictor.loadModel(modelPath), FightPricePredictor.loadPreprocessModel(preprocessorPath))
-  private val brPredictor = holder.context.broadcast(predictor)
 
   /**
    * insert a task and start to predict
@@ -83,7 +75,8 @@ class PredictorService @Inject()(mongo: Mongo, @Named("configured-actor") myActo
   }
 
   private def predict(input: Try[sql.Dataset[Flight]]) = {
-    val output = brPredictor.value.predict(input)
+
+    val output = holder.brPredictor.value.predict(input)
     output match {
       case Success(value) => value
       case Failure(exception) =>

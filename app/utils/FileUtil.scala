@@ -31,22 +31,23 @@ object FileUtil {
 
   def generateFileOutputPath(uuid: String): String = s"${getUploadPath(uuid)}output$separator"
 
-  def generateZipFilePath(bucket: String, id: String) = s"${generateFilePath(bucket)}$id.zip"
-
   def getModelPath(bucket: String, id: String) = s"${generateUnzipFilePath(bucket, id)}${separator}best_model${separator}"
 
   def getPreprocessModelPath(bucket: String, id: String) = s"${generateUnzipFilePath(bucket, id)}${separator}preprocess_model${separator}"
 
   def generateUnzipFilePath(bucket: String, id: String) = s"${generateFilePath(bucket)}unzip$separator$id"
 
+  /**
+   *
+   * @param bucket
+   * @param id
+   */
   def downloadIfNotExist(bucket: String, id: String): Unit = {
-    // uuid 去下载
     val saveDirPath: String = s"${generateFilePath(bucket)}"
     val zipPath = new File(saveDirPath)
     if (!zipPath.exists()) {
       zipPath.mkdir()
     }
-
     println(s"downloading $saveDirPath")
     MinioOps.getFile(bucket, id, saveDirPath, s"$id.zip")
     val unzipPath = generateUnzipFilePath(bucket, id)
