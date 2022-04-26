@@ -82,6 +82,11 @@ class PredictorService @Inject()(mongo: Mongo, @Named("configured-actor") myActo
     predict(Try.apply(input.dy))
   }
 
+  def predict(flights: Seq[Flight]): sql.DataFrame = {
+    val input = IterableFlightReader(flights)
+    predict(Try.apply(input.dy))
+  }
+
   private def predict(input: Try[sql.Dataset[Flight]]) = {
     val output = brPredictor.value.predict(input)
     output match {
