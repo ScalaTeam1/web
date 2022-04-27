@@ -39,20 +39,19 @@ class ContextHolder @Inject()(config: Configuration, mongo: Mongo, applicationLi
 
   private val modelId: String = {
     val value = mongo.find[Model]().sort({
-      Json.obj("datetime" -> -1)
+      Json.obj("datetime" -> -1, "score" -> -1)
     }).list()
     Try(Await.result(value, 10 seconds)) match {
       case Success(list) =>
         val uuid = list.filter(model => {
           try {
             val stat = MinioOps.minioClient.statObject(defaultBucket, model.uuid)
-            stat.etag().isEmpty
+            stat.etag().nonEmpty
           } catch {
-            case _: ZipException => logger.error(s"pass empty file ${model.uuid}")
-            case _: ErrorResponseException => logger.error(s"pass error response ${model.uuid}")
-            case e: Exception => logger.error(e.getMessage)
+            case _: ZipException => logger.error(s"pass empty file ${model.uuid}"); false;
+            case _: ErrorResponseException => logger.error(s"pass error response ${model.uuid}"); false;
+            case e: Exception => logger.error(e.getMessage); false;
           }
-          false
         }).map(model => model.uuid)
         uuid match {
           case Nil => config.get[String]("predictor.model_id")
@@ -63,7 +62,7 @@ class ContextHolder @Inject()(config: Configuration, mongo: Mongo, applicationLi
         logger.info(s"download model ${tmp}")
         tmp
       case _ =>
-        println("Very Strange")
+        logger.error("Very Strange")
         System.exit(0)
         ""
     }

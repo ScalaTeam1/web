@@ -8,7 +8,7 @@ import java.nio.file.Files
 
 object FileUtil {
 
-  private val rootPath = System.getProperty("user.dir")
+  val rootPath = System.getProperty("user.dir")
 
   private val separator: String = java.io.File.separator
 
@@ -40,21 +40,21 @@ object FileUtil {
   /**
    *
    * @param bucket
-   * @param id
+   * @param objectName
    */
-  def downloadIfNotExist(bucket: String, id: String): Unit = {
+  def downloadIfNotExist(bucket: String, objectName: String): Unit = {
     val saveDirPath: String = s"${generateFilePath(bucket)}"
     val zipPath = new File(saveDirPath)
     if (!zipPath.exists()) {
       zipPath.mkdir()
     }
     println(s"downloading $saveDirPath")
-    MinioOps.getFile(bucket, id, saveDirPath, s"$id.zip")
-    val unzipPath = generateUnzipFilePath(bucket, id)
+    MinioOps.getFile(bucket, objectName, saveDirPath, s"$objectName")
+    val unzipPath = generateUnzipFilePath(bucket, objectName)
     println(s"unzip $unzipPath")
     new File(unzipPath).mkdir()
 
-    ZipUtil.unpack(new File(saveDirPath + s"$id.zip"), new File(unzipPath))
+    ZipUtil.unpack(new File(saveDirPath + s"$objectName"), new File(unzipPath))
   }
 
   def download(file: File, filename: String): File = {

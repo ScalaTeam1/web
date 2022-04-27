@@ -88,7 +88,7 @@ class PredictorService @Inject()(mongo: Mongo, @Named("configured-actor") myActo
   def flightsToCsv(uuid: String, flights: sql.DataFrame): String = {
     val output = FileUtil.generateFileOutputPath(uuid)
     val tmp = flights.select("id", "airline", "flight", "sourceCity", "departureTime", "stops", "arrivalTime", "destinationCity", "classType", "duration", "daysLeft", "prediction")
-    tmp.write.format("csv").save(output)
+    tmp.repartition(1).write.format("csv").save(output)
     logger.info(s"prediction finished $uuid")
     output
   }
