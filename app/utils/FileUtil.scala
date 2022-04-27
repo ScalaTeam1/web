@@ -8,7 +8,7 @@ import java.nio.file.Files
 
 object FileUtil {
 
-  private val rootPath = System.getProperty("user.dir")
+  val rootPath = System.getProperty("user.dir")
 
   private val separator: String = java.io.File.separator
 
@@ -31,29 +31,30 @@ object FileUtil {
 
   def generateFileOutputPath(uuid: String): String = s"${getUploadPath(uuid)}output$separator"
 
-  def generateZipFilePath(bucket: String, id: String) = s"${generateFilePath(bucket)}$id.zip"
-
   def getModelPath(bucket: String, id: String) = s"${generateUnzipFilePath(bucket, id)}${separator}best_model${separator}"
 
   def getPreprocessModelPath(bucket: String, id: String) = s"${generateUnzipFilePath(bucket, id)}${separator}preprocess_model${separator}"
 
   def generateUnzipFilePath(bucket: String, id: String) = s"${generateFilePath(bucket)}unzip$separator$id"
 
-  def downloadIfNotExist(bucket: String, id: String): Unit = {
-    // uuid 去下载
+  /**
+   *
+   * @param bucket
+   * @param objectName
+   */
+  def downloadIfNotExist(bucket: String, objectName: String): Unit = {
     val saveDirPath: String = s"${generateFilePath(bucket)}"
     val zipPath = new File(saveDirPath)
     if (!zipPath.exists()) {
       zipPath.mkdir()
     }
-
     println(s"downloading $saveDirPath")
-    MinioOps.getFile(bucket, id, saveDirPath, s"$id.zip")
-    val unzipPath = generateUnzipFilePath(bucket, id)
+    MinioOps.getFile(bucket, objectName, saveDirPath, s"$objectName")
+    val unzipPath = generateUnzipFilePath(bucket, objectName)
     println(s"unzip $unzipPath")
     new File(unzipPath).mkdir()
 
-    ZipUtil.unpack(new File(saveDirPath + s"$id.zip"), new File(unzipPath))
+    ZipUtil.unpack(new File(saveDirPath + s"$objectName"), new File(unzipPath))
   }
 
   def download(file: File, filename: String): File = {

@@ -1,6 +1,6 @@
 # Before developing
 
-1. run sbt packge to build the another project
+1. run sbt package to build the another project [link](https://github.com/ScalaTeam1/flight-prices-prediction-xgboost)
 2. add lib to this project's classpath
 3. install play! plugin in IDEA
 4. add environment variable: http.port=...
@@ -8,15 +8,27 @@
 
 # Files
 
-├── README.md ├── app │ ├── Module.scala Guice Configuration Class │ ├── controllers API Controller │ ├── filters API
-Filter │ ├── pojos │ ├── services │ ├── utils ├── build.sbt ├── conf │ ├── application.conf │ ├── logback.xml logback
-config file │ └── routes API Routes ├── project │ ├── build.properties │ ├── plugins.sbt └── web
-
-## TODO
-
-## TODO
-
-- online predict
-- streaming
-- mongodb curd
-
+```text
+./
+├── README.md
+├── app
+│   ├── Module.scala
+│   ├── actors
+│   ├── config
+│   ├── controllers
+│   ├── filters
+│   ├── models
+│   ├── services
+│   └── utils
+├── build.sbt
+├── conf
+│   ├── application.conf
+│   ├── input.csv
+│   ├── logback.xml
+│   └── routes
+├── project
+│   ├── build.properties
+│   ├── plugins.sbt
+│   ├── project
+│   └── target
+```

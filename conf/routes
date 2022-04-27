@@ -5,6 +5,7 @@
 
 # An example controller showing a sample home page
 GET         /                    controllers.HomeController.hello
+GET         /test                    controllers.HomeController.index
 
 # An example controller showing how to write asynchronous code
 GET         /task/:id             controllers.AsyncController.get(id:String)
