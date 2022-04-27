@@ -43,7 +43,7 @@ class ContextHolder @Inject()(config: Configuration, mongo: Mongo, applicationLi
       case Success(list) =>
         val uuid = list.filter(model => {
           try {
-            val stat = MinioOps.minioClient.statObject(defaultBucket, model.uuid)
+            val stat = MinioOps.minioClient.statObject(defaultBucket, model.uuid + ".zip")
             stat.etag().nonEmpty
           } catch {
             case _: ZipException => logger.warn(s"pass empty file ${model.uuid}"); false;
@@ -67,11 +67,11 @@ class ContextHolder @Inject()(config: Configuration, mongo: Mongo, applicationLi
   }
 
 
-  val _ = try {
-    val unzipPath = generateUnzipFilePath(defaultBucket, modelId)
+  try {
+    val unzipPath = generateUnzipFilePath(defaultBucket, modelId + ".zip")
     val file = new File(unzipPath)
     if (!file.exists()) {
-      downloadIfNotExist(defaultBucket, modelId)
+      downloadIfNotExist(defaultBucket, modelId + ".zip")
     }
   } catch {
     case _: ZipException => System.exit(-1)
