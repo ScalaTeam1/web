@@ -68,7 +68,7 @@ class ContextHolder @Inject()(config: Configuration, mongo: Mongo, applicationLi
 
 
   try {
-    val unzipPath = generateUnzipFilePath(defaultBucket, modelId + ".zip")
+    val unzipPath = generateUnzipFilePath(defaultBucket, modelId)
     val file = new File(unzipPath)
     if (!file.exists()) {
       downloadIfNotExist(defaultBucket, modelId + ".zip")
