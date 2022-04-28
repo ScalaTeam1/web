@@ -7,7 +7,6 @@ import com.neu.edu.FlightPricePrediction.predictor.FightPricePredictor
 import io.minio.errors.ErrorResponseException
 import models.Model
 import org.apache.spark.broadcast.Broadcast
-import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.zeroturnaround.zip.ZipException
 import play.api.inject.ApplicationLifecycle
@@ -28,12 +27,11 @@ class ContextHolder @Inject()(config: Configuration, mongo: Mongo, applicationLi
   conf.setAppName("web")
   conf.setMaster("local[*]")
   val context: SparkContext = SparkContext.getOrCreate(conf)
-  val defaultBucket = config.get[String]("bucket")
-  val streamingContext = new StreamingContext(context, Seconds(1))
+  val defaultBucket: String = config.get[String]("bucket")
 
   applicationLifecycle.addStopHook { () =>
     Future.successful {
-      streamingContext.stop(true)
+      context.stop()
     }
   }
 
@@ -45,12 +43,12 @@ class ContextHolder @Inject()(config: Configuration, mongo: Mongo, applicationLi
       case Success(list) =>
         val uuid = list.filter(model => {
           try {
-            val stat = MinioOps.minioClient.statObject(defaultBucket, model.uuid)
+            val stat = MinioOps.minioClient.statObject(defaultBucket, model.uuid + ".zip")
             stat.etag().nonEmpty
           } catch {
-            case _: ZipException => logger.error(s"pass empty file ${model.uuid}"); false;
-            case _: ErrorResponseException => logger.error(s"pass error response ${model.uuid}"); false;
-            case e: Exception => logger.error(e.getMessage); false;
+            case _: ZipException => logger.warn(s"pass empty file ${model.uuid}"); false;
+            case _: ErrorResponseException => logger.warn(s"pass error response ${model.uuid}"); false;
+            case e: Exception => logger.warn(e.getMessage); false;
           }
         }).map(model => model.uuid)
         uuid match {
@@ -69,11 +67,11 @@ class ContextHolder @Inject()(config: Configuration, mongo: Mongo, applicationLi
   }
 
 
-  val _ = try {
+  try {
     val unzipPath = generateUnzipFilePath(defaultBucket, modelId)
     val file = new File(unzipPath)
     if (!file.exists()) {
-      downloadIfNotExist(defaultBucket, modelId)
+      downloadIfNotExist(defaultBucket, modelId + ".zip")
     }
   } catch {
     case _: ZipException => System.exit(-1)

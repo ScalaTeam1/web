@@ -2,11 +2,14 @@ package utils;
 
 import com.neu.edu.FlightPricePrediction.db.MinioOps
 import org.zeroturnaround.zip.ZipUtil
+import play.api.Logger
 
 import java.io.File
 import java.nio.file.Files
 
 object FileUtil {
+
+  private val logger = Logger(this.getClass)
 
   val rootPath = System.getProperty("user.dir")
 
@@ -48,12 +51,11 @@ object FileUtil {
     if (!zipPath.exists()) {
       zipPath.mkdir()
     }
-    println(s"downloading $saveDirPath")
+    logger.info(s"downloading $saveDirPath")
     MinioOps.getFile(bucket, objectName, saveDirPath, s"$objectName")
-    val unzipPath = generateUnzipFilePath(bucket, objectName)
-    println(s"unzip $unzipPath")
+    val unzipPath = generateUnzipFilePath(bucket, objectName.replace(".zip", ""))
+    logger.info(s"unzip $unzipPath")
     new File(unzipPath).mkdir()
-
     ZipUtil.unpack(new File(saveDirPath + s"$objectName"), new File(unzipPath))
   }
 
