@@ -1,7 +1,12 @@
 import sbt.Keys.libraryDependencies
 
 name := "web"
-
+initialize := {
+  val _ = initialize.value // run the previous initialization
+  val required = "1.8"
+  val current  = sys.props("java.specification.version")
+  assert(current == required, s"Unsupported JDK: java.specification.version $current != $required")
+}
 version := "1.0"
 
 lazy val `web` = (project in file(".")).enablePlugins(PlayScala)
@@ -20,6 +25,7 @@ libraryDependencies ++= Seq(
   "org.mongodb" % "mongo-java-driver" % "3.12.10",
   "dev.morphia.morphia" % "morphia-core" % "2.2.6",
   "com.typesafe" % "config" % "1.4.2",
+  "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test,
   "org.zeroturnaround" % "zt-zip" % "1.15"
 )
 
